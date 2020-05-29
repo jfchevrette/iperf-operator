@@ -15,7 +15,7 @@ const (
 	nodeWorkerSelectorValue = ""
 )
 
-func createServerPod(namespacedName types.NamespacedName, nodeSelectorValue string) *corev1.Pod {
+func generateServerPod(namespacedName types.NamespacedName, nodeSelectorValue string) *corev1.Pod {
 	return &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Pod",
@@ -42,7 +42,7 @@ func createServerPod(namespacedName types.NamespacedName, nodeSelectorValue stri
 
 }
 
-func createClientPod(namespacedName types.NamespacedName, containerIP, sessionDuration, concurrentConnections string) *corev1.Pod {
+func generateClientPod(namespacedName types.NamespacedName, podIP, nodeSelectorValue string, sessionDuration, concurrentConnections int) *corev1.Pod {
 	return &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Pod",
@@ -58,8 +58,11 @@ func createClientPod(namespacedName types.NamespacedName, containerIP, sessionDu
 					Name:    "iperf-client",
 					Image:   iperfClientImage,
 					Command: []string{iperfCmd},
-					Args:    []string{"-c", containerIP, "-t", sessionDuration, "-P", concurrentConnections},
+					Args:    []string{"-c", podIP, "-t", string(sessionDuration), "-P", string(concurrentConnections)},
 				},
+			},
+			NodeSelector: map[string]string{
+				nodeSelectorKey: nodeSelectorValue,
 			},
 		},
 	}
