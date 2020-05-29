@@ -2,6 +2,7 @@ package iperf
 
 import (
 	"context"
+	"fmt"
 
 	iperfv1alpha1 "github.com/jharrington22/iperf-operator/pkg/apis/iperf/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -86,9 +87,12 @@ func (r *ReconcileIperf) Reconcile(request reconcile.Request) (reconcile.Result,
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling Iperf")
 
+	// Set context
+	ctx := context.TODO()
+
 	// Fetch the Iperf instance
 	instance := &iperfv1alpha1.Iperf{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
+	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -98,6 +102,31 @@ func (r *ReconcileIperf) Reconcile(request reconcile.Request) (reconcile.Result,
 		}
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
+	}
+
+	// Fetch a list of worker nodes on the cluster
+	workerNodeList := &corev1.NodeList{}
+	workerNodeListOpts := []client.ListOption{
+		client.MatchingLabels{
+			nodeWorkerSelectorKey: nodeWorkerSelectorValue,
+		},
+	}
+	err = r.client.List(ctx, workerNodeList, workerNodeListOpts...)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Determine the number of worker nodes
+	workerNodeNum := len(workerNodeList.Items)
+
+	reqLogger.Info(fmt.Sprintf("%d worker nodes found", workerNodeNum))
+
+	workerNodeLabels := getWorkerNodeLabels(workerNodeList)
+
+	workerNodes := r.discorverWorkerNodes(workerNodeList)
+
+	for _, label := range workerNodeLabels {
+		createClientPod()
 	}
 
 	// Define a new Pod object
@@ -129,6 +158,20 @@ func (r *ReconcileIperf) Reconcile(request reconcile.Request) (reconcile.Result,
 	return reconcile.Result{}, nil
 }
 
+func (r *ReconcileIperf) discorverWorkerNodes() map[string]stirng {
+
+	workerNodeMeta := map[string]stirng
+
+	for _, workerNode := range workerNodeList.Items {
+		label := getWorkerNodeLabel(workerNode)
+		ip := getWorkerNodeIP(workerNode)
+
+		workerNodeMeta[label]{ip}
+	}
+
+	return workerNodeMeta
+}
+
 // newPodForCR returns a busybox pod with the same name/namespace as the cr
 func newPodForCR(cr *iperfv1alpha1.Iperf) *corev1.Pod {
 	labels := map[string]string{
@@ -150,4 +193,33 @@ func newPodForCR(cr *iperfv1alpha1.Iperf) *corev1.Pod {
 			},
 		},
 	}
+}
+
+func getWorkerNodeLabel(workerNode *corev1.Node) string {
+	return workerNode.Labels["kubernetes.io/hostname"]
+}
+
+// getWorkerNodeIP returns the internal IP of the  
+func getWrokerNodeIP(workerNode *corev1.Node) *string {
+	var internalIP string
+
+	for key, value := range workerNode.Status.Addresses {
+		if key == nodeInternalIPKey {
+			internalIP = value 
+		}
+	}
+	return &internalIP
+
+}
+
+func getWorkerNodeLabels(workerNodeList *corev1.NodeList) []string {
+	// Populate a list of nodes to generate server/client pods for by label
+	// The label we'll use is kubernetes.io/hostname=ip-10-100-138-234
+	workerNodeLabels := []string{}
+
+	for _, workerNode := range workerNodeList.Items {
+		workerNodeLabels = append(workerNodeLabels, workerNode.Labels["kubernetes.io/hostname"])
+	}
+
+	return workerNodeLabels
 }

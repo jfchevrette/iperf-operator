@@ -4,21 +4,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // IperfSpec defines the desired state of Iperf
 type IperfSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+	// MaxThroughput Max bandwidth all clients should consume (divided equally between num of clients)
+	MaxThroughput int `json:"maxThroughput,omitempty`
+	// ConcurrentConnections Total number of connections from client to server (divided equally between num of clients)
+	ConcurrentConnections int `json:"concurrentConnections,omitempty`
+	// ClientNum Number of clients, should not exceed number of nodes (default == number of nodes)
+	ClientNum int `json:"clientNum,omitempty`
+	// ServerNum Number of servers, should not exceed number of nodes (default 1)
+	ServerNum int `json:"serverNum,omitempty`
 }
 
 // IperfStatus defines the observed state of Iperf
 type IperfStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+	// TODO add conntrack max and number of connections status
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
