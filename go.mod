@@ -3,7 +3,7 @@ module github.com/jharrington22/iperf-operator
 go 1.13
 
 require (
-	github.com/operator-framework/operator-sdk v0.17.1-0.20200523015351-b602297bde06
+	github.com/operator-framework/operator-sdk v0.18.0
 	github.com/spf13/pflag v1.0.5
 	k8s.io/api v0.18.2
 	k8s.io/apimachinery v0.18.2

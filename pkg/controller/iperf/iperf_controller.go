@@ -3,6 +3,7 @@ package iperf
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	iperfv1alpha1 "github.com/jharrington22/iperf-operator/pkg/apis/iperf/v1alpha1"
@@ -56,15 +57,15 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource Pods and requeue the owner Iperf
-	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &iperfv1alpha1.Iperf{},
-	})
-	if err != nil {
-		return err
-	}
+	// // TODO(user): Modify this to be the types you create that are owned by the primary resource
+	// // Watch for changes to secondary resource Pods and requeue the owner Iperf
+	// err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
+	// 	IsController: true,
+	// 	OwnerType:    &iperfv1alpha1.Iperf{},
+	// })
+	// if err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
@@ -91,26 +92,32 @@ func (r *ReconcileIperf) Reconcile(request reconcile.Request) (reconcile.Result,
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling Iperf")
 
-	// Set context
-	ctx := context.TODO()
-
 	// Fetch the Iperf instance
 	cr := &iperfv1alpha1.Iperf{}
-	err := r.client.Get(ctx, request.NamespacedName, cr)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: request.Name, Namespace: request.Namespace}, cr)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
+			reqLogger.Info("Error CR not found")
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
+		reqLogger.Info("Error getting CR")
 		return reconcile.Result{}, err
 	}
 
+	fmt.Println(fmt.Sprintf("%+v", cr))
+
+	fmt.Println(cr.Spec.SessionDuration)
+
 	// Fetch configuration for iPerf client/server's
-	sessionDuration := cr.Spec.SessionDuration
-	concurrentConnections := cr.Spec.ConcurrentConnections
+	sessionDuration := strconv.Itoa(cr.Spec.SessionDuration)
+	concurrentConnections := strconv.Itoa(cr.Spec.ConcurrentConnections)
+
+	reqLogger.Info(fmt.Sprintf("From CR: SessionDuration: %d, ConcurrentContections: %d", cr.Spec.SessionDuration, cr.Spec.ConcurrentConnections))
+	reqLogger.Info(fmt.Sprintf("From Var: SessionDuration: %s, ConcurrentContections: %s", sessionDuration, concurrentConnections))
 
 	// Fetch a list of worker nodes on the cluster
 	workerNodeList := &corev1.NodeList{}
@@ -119,7 +126,7 @@ func (r *ReconcileIperf) Reconcile(request reconcile.Request) (reconcile.Result,
 			nodeWorkerSelectorKey: nodeWorkerSelectorValue,
 		},
 	}
-	err = r.client.List(ctx, workerNodeList, workerNodeListOpts...)
+	err = r.client.List(context.TODO(), workerNodeList, workerNodeListOpts...)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -161,6 +168,7 @@ func (r *ReconcileIperf) Reconcile(request reconcile.Request) (reconcile.Result,
 		}
 		// Continue as server pod alraedy exists
 
+		time.Sleep(time.Duration(10 * time.Second))
 		// Get server pod IP to pass to iPerf clients
 		iperfServerIP, err := r.getServerPodIP(namespacedName)
 		if err != nil {
@@ -177,6 +185,8 @@ func (r *ReconcileIperf) Reconcile(request reconcile.Request) (reconcile.Result,
 
 		iperfServers[label] = *iperfServerIP
 	}
+
+	reqLogger.Info(fmt.Sprintf("Iperf server map: %+v", iperfServers))
 
 	for label, iperfServerIP := range iperfServers {
 		clientNamePrefix := "iperf-client-"
@@ -195,7 +205,7 @@ func (r *ReconcileIperf) Reconcile(request reconcile.Request) (reconcile.Result,
 		found := &corev1.Pod{}
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: namespacedName.Name, Namespace: namespacedName.Namespace}, found)
 		if err != nil && errors.IsNotFound(err) {
-			reqLogger.Info("Creating a new iperf server Pod", "iperfClientPod.Namespace", iperfClientPod.Namespace, "iperfClientPod.Name", iperfClientPod.Name, "iperClientPodWorkerLabel", label)
+			reqLogger.Info("Creating a new iperf client Pod", "iperfClientPod.Namespace", iperfClientPod.Namespace, "iperfClientPod.Name", iperfClientPod.Name, "iperClientPodWorkerLabel", label, "ServerIP", iperfServerIP, "iperfConcurrentConnections", concurrentConnections, "iperfSessionDuration", sessionDuration)
 			err = r.client.Create(context.TODO(), iperfClientPod)
 			if err != nil {
 				return reconcile.Result{}, err
@@ -205,6 +215,8 @@ func (r *ReconcileIperf) Reconcile(request reconcile.Request) (reconcile.Result,
 		}
 		// Continue as client pod alraedy exists
 	}
+
+	reqLogger.Info("Server and clients created")
 
 	return reconcile.Result{}, nil
 }

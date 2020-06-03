@@ -42,7 +42,7 @@ func generateServerPod(namespacedName types.NamespacedName, nodeSelectorValue st
 
 }
 
-func generateClientPod(namespacedName types.NamespacedName, podIP, nodeSelectorValue string, sessionDuration, concurrentConnections int) *corev1.Pod {
+func generateClientPod(namespacedName types.NamespacedName, podIP, nodeSelectorValue, sessionDuration, concurrentConnections string) *corev1.Pod {
 	return &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Pod",
@@ -58,7 +58,7 @@ func generateClientPod(namespacedName types.NamespacedName, podIP, nodeSelectorV
 					Name:    "iperf-client",
 					Image:   iperfClientImage,
 					Command: []string{iperfCmd},
-					Args:    []string{"-c", podIP, "-t", string(sessionDuration), "-P", string(concurrentConnections)},
+					Args:    []string{"-c", podIP, "-t", sessionDuration, "-P", concurrentConnections},
 				},
 			},
 			NodeSelector: map[string]string{

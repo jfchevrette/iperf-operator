@@ -9,9 +9,9 @@ type IperfSpec struct {
 	// MaxThroughput Max bandwidth all clients should consume (divided equally between num of clients)
 	MaxThroughput int `json:"maxThroughput,omitempty"`
 	// ConcurrentConnections Total number of connections from client to server (divided equally between num of clients)
-	ConcurrentConnections int `json:"concurrentConnections,omitempty"`
+	ConcurrentConnections int `json:"concurrentConnections"`
 	// SessionDuration duration in minutes for the test to run
-	SessionDuration int `json:"sessionDuration,omitempty"`
+	SessionDuration int `json:"sessionDuration"`
 	// ClientNum Number of clients, should not exceed number of nodes (default == number of nodes)
 	ClientNum int `json:"clientNum,omitempty"`
 	// ServerNum Number of servers, should not exceed number of nodes (default 1)
