@@ -1,0 +1,10 @@
+# Project specific values
+OPERATOR_NAME?=iperf-operator
+OPERATOR_NAMESPACE?=iperf-operator
+
+IMAGE_REGISTRY?=quay.io
+IMAGE_REPOSITORY?=jharrington22
+IMAGE_NAME?=$(OPERATOR_NAME)
+
+VERSION_MAJOR?=0
+VERSION_MINOR?=1

@@ -7,15 +7,15 @@ import (
 // IperfSpec defines the desired state of Iperf
 type IperfSpec struct {
 	// MaxThroughput Max bandwidth all clients should consume (divided equally between num of clients)
-	MaxThroughput int `json:"maxThroughput,omitempty`
+	MaxThroughput int `json:"maxThroughput,omitempty"`
 	// ConcurrentConnections Total number of connections from client to server (divided equally between num of clients)
-	ConcurrentConnections int `json:"concurrentConnections,omitempty`
+	ConcurrentConnections int `json:"concurrentConnections,omitempty"`
 	// SessionDuration duration in minutes for the test to run
-	SessionDuration int `json:"sessionDuration,omitempty`
+	SessionDuration int `json:"sessionDuration,omitempty"`
 	// ClientNum Number of clients, should not exceed number of nodes (default == number of nodes)
-	ClientNum int `json:"clientNum,omitempty`
+	ClientNum int `json:"clientNum,omitempty"`
 	// ServerNum Number of servers, should not exceed number of nodes (default 1)
-	ServerNum int `json:"serverNum,omitempty`
+	ServerNum int `json:"serverNum,omitempty"`
 }
 
 // IperfStatus defines the observed state of Iperf

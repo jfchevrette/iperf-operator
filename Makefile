@@ -1,4 +1,8 @@
 # SHELL := /usr/bin/env bash
+#
+# Include shared Makefiles
+include project.mk
+include standard.mk
 
 DOCKERFILE = ./build/Dockerfile
 
@@ -20,16 +24,6 @@ IMAGE_URI_LATEST=$(IMAGE_REGISTRY)/$(IMAGE_REPOSITORY)/$(IMAGE_NAME):latest
 .PHONY: docker-build
 docker-build: build
 
-.PHONY: build
-build:
-	docker build . -f $(DOCKERFILE) -t ${IMAGE_URI}
-	docker tag $(IMAGE_URI) $(IMAGE_URI_LATEST)
-
-.PHONY: push
-push:
-   docker push $(IMAGE_URI)
-   docker push $(IMAGE_URI_LATEST)
-
 .PHONY: login
 login:
-   docker login -u "$$QUAY_BOT_USERNAME" --password "$$QUAY_BOT_PASSWORD" quay.io
+	docker login -u "$$QUAY_BOT_USERNAME" --password "$$QUAY_BOT_PASSWORD" quay.io
